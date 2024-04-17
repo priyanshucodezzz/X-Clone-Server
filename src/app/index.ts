@@ -7,6 +7,8 @@ import { prismaClient } from '../clients/db';
 
 
 import {User} from './user'
+import { GraphqlContext } from '../interfaces';
+import JWTService from '../services/jwt';
 
 async function initServer(){
     const app = express();
@@ -14,7 +16,7 @@ async function initServer(){
     app.use(bodyParser.json())
     app.use(cors())
 
-    const server = new ApolloServer({
+    const server = new ApolloServer<GraphqlContext>({
         typeDefs : `
             ${User.types}
             type Query { 
@@ -30,7 +32,17 @@ async function initServer(){
 
     await server.start()
 
-    app.use('/graphql' , expressMiddleware(server));
+    app.use('/graphql' , expressMiddleware(server , {
+        context: async({req , res}) => {
+            return {
+              user: req.headers.authorization
+                ? JWTService.decodeToken (
+                    req.headers.authorization.split("Bearer ")[1]
+                  )
+                : undefined,
+            };
+        }
+    }));
 
     return app;
 
