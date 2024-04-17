@@ -3,10 +3,10 @@ import bodyParser from 'body-parser';
 import cors from "cors"
 import { ApolloServer } from '@apollo/server';
 import { expressMiddleware } from '@apollo/server/express4';
-import { prismaClient } from '../clients/db';
 
 
 import {User} from './user'
+import {Post} from './post'
 import { GraphqlContext } from '../interfaces';
 import JWTService from '../services/jwt';
 
@@ -19,14 +19,25 @@ async function initServer(){
     const server = new ApolloServer<GraphqlContext>({
         typeDefs : `
             ${User.types}
+            ${Post.types}
             type Query { 
                ${User.queries}
+               ${Post.queries}
+            }
+            type Mutation {
+                ${Post.mutations}
             }
         ` ,
         resolvers : {
             Query: {
                 ...User.resolvers.queries,
+                ...Post.resolvers.queries,
             },
+            Mutation: {
+                ...Post.resolvers.mutations,
+            },
+            ...Post.resolvers.extraResolvers,
+            ...User.resolvers.extraResolvers,
         },
     });
 
